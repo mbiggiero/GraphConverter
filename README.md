@@ -1,5 +1,5 @@
 # GraphConverter
-A simple python UI tool to convert graphs between different formats.
+A simple UI for converting graphs between different formats.
 
 ![alt text](https://github.com/mbiggiero/GraphConverter/blob/main/screenshot.png?raw=true)
 
