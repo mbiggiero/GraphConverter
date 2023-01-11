@@ -3,6 +3,7 @@ import networkx as nx
 import pandas as pd
 import xlsxwriter 
 import warnings
+import pickle
 import sys
 import os
 
@@ -53,6 +54,11 @@ def read_dl(filename):
     except pd.errors.ParserError as e:
         return None    
     return dl    
+def read_pickle(filename):
+   # open a file, where you stored the pickled data
+   G = pickle.load(open(filename, 'rb'))
+   return G
+
 #Output Functions
 def write_dl(G,filename):
     isW=nx.is_weighted(G)
@@ -78,9 +84,13 @@ def write_dl(G,filename):
         else:        
             for line in nx.generate_edgelist(G):
                 f.write(str(line.split(' {')[0]))
+                f.write("\n")
         for node in G.nodes():
             if G.degree[node]==0:
                 f.write(str(node))
+                f.write("\n")
+def write_pickle(G,filename):
+    pickle.dump(G, open(filename, 'wb'))
 
 def write_xlsx(G,filename):
     table=nx.to_pandas_adjacency(G,nodelist=sorted(G.nodes),weight='weight',nonedge=float("NaN"))
@@ -157,6 +167,7 @@ def write_edgelist(G,filename):
 def ConvertClick():
     global waitForMatrix
     global graphName
+    global G
     global path    
 
     if waitForMatrix:
@@ -188,6 +199,8 @@ def ConvertClick():
                         messagebox.showinfo("Input error", "Invalid Excel input! Please double-check!")
                         return
                 usingEdgeList=True    
+        elif matrixName.endswith(".nxg"):
+            G=read_pickle(path)
         else:        
             excelMatrix=read_dl(path) 
             if excelMatrix is None:
@@ -236,6 +249,9 @@ def ConvertClick():
         if graphsOutput.get()=="Edge List":
             outputName=str(graphName) + " Edge List.xlsx"
             write_edgelist(G, str(graphName) + " Edge List.xlsx") 
+        if graphsOutput.get()=="NetworkX Graph":
+            outputName=str(graphName) + ".nxg"
+            write_pickle(G, str(graphName) + ".nxg") 
                 
         analyzeBtn.config(state=DISABLED)  
         analyzeBtnText.set("All done!")            
@@ -249,7 +265,7 @@ def OpenFileClick():
     global matrixName
     global waitForMatrix
 
-    path = askopenfilename(initialdir = directory, title = "Select the input graph:", filetypes =[("Graph input files", "*.xlsx *.xls *.txt")])
+    path = askopenfilename(initialdir = directory, title = "Select the input graph:", filetypes =[("Graph input files", "*.xlsx *.xls *.txt *.nxg")])
     directory = os.path.dirname(path) 
     matrixName = os.path.basename(path)  
     graphName=matrixName.rsplit('.', 1)[0]
@@ -295,7 +311,7 @@ labelGraphsOutput.grid(row=1, column=0,  padx=10, pady=5, sticky=W)
 
 graphsOutput = StringVar()
 graphsOutput.set("Matrix")
-graphsOutputMenu = OptionMenu(root, graphsOutput, "DL", "Matrix", "Edge List",command=ClearProgress)
+graphsOutputMenu = OptionMenu(root, graphsOutput, "DL", "Matrix", "Edge List", "NetworkX Graph",command=ClearProgress)
 graphsOutputMenu.grid(row=1,column=1,columnspan=2, padx=8, pady=5, sticky=EW)
 
 analyzeBtnText = StringVar()
