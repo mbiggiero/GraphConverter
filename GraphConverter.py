@@ -1,4 +1,4 @@
-#Graph Converter - Final version
+#Graph Converter - v1.0.0
 import networkx as nx
 import pandas as pd
 import xlsxwriter 
@@ -22,7 +22,7 @@ saveFolder = "."
 waitForMatrix = True
 matrixName = ""
 path=''
-               
+
 #xlsxWriter
 workbook = None
 worksheet = None
@@ -38,6 +38,13 @@ df = None
 def isSquare (m): return all (len (row) == len (m) for row in m)
 def OpenFile(name): sys.stdout = open(name, "w")
 def CloseFile(): sys.stdout.close()
+def isDirected():
+    global G
+    directed = False
+    for x,y in G.edges():
+        if G.get_edge_data(x,y)!=G.get_edge_data(y,x): 
+            directed = True        
+    return directed
 
 #Input Functions
 def OpenMatrix(filepath):
@@ -61,6 +68,7 @@ def read_pickle(filename):
 
 #Output Functions
 def write_dl(G,filename):
+    G=G.to_directed()
     isW=nx.is_weighted(G)
     if isW:
         isReallyW=False
@@ -109,6 +117,7 @@ def write_edgelist(G,filename):
     global side_format
     global mixed_format
 
+    G=G.to_directed()
     isW=nx.is_weighted(G)
 
     if isW:
@@ -236,23 +245,44 @@ def ConvertClick():
                 try:
                     G.remove_node(z) 
                 except nx.exception.NetworkXError:
-                    pass                    
+                    pass   
+
+        if isDirected():
+            isD=True
+            geo = nx.DiGraph() 
+            for x in sorted(G.nodes()):
+                geo.add_node(x)
+            for x in sorted(G.edges(data=True)):
+                geo.add_edge(x[0],x[1],weight=x[2]['weight'])
+            G=geo
+        else:
+            isD=False
+            geo = nx.Graph() 
+            for x in sorted(G.nodes()):
+                geo.add_node(x)
+            for x in sorted(G.edges(data=True)):
+                geo.add_edge(x[0],x[1],weight=x[2]['weight'])
+            G=geo                 
         #Graph Creation End
-        
         outputName=""
         if graphsOutput.get()=="DL":
             outputName=str(graphName) + " DL.txt"
             write_dl(G, str(graphName) + " DL.txt")
         if graphsOutput.get()=="Matrix":
-            outputName=str(graphName) + " Matrix.xlsx"
-            write_xlsx(G, str(graphName) + " Matrix.xlsx") 
+            if len(G.nodes())>16000:
+                messagebox.showinfo("Alert", "Graph too big for excel!")
+            else:
+                outputName=str(graphName) + " Matrix.xlsx"
+                write_xlsx(G, str(graphName) + " Matrix.xlsx") 
         if graphsOutput.get()=="Edge List":
             outputName=str(graphName) + " Edge List.xlsx"
             write_edgelist(G, str(graphName) + " Edge List.xlsx") 
         if graphsOutput.get()=="NetworkX Graph":
-            outputName=str(graphName) + ".nxg"
-            write_pickle(G, str(graphName) + ".nxg") 
-                
+            outputName=str(graphName) + " Pickle.nxg"
+            write_pickle(G, str(graphName) + " Pickle.nxg") 
+
+        G=None
+        excelMatrix=None
         analyzeBtn.config(state=DISABLED)  
         analyzeBtnText.set("All done!")            
 
@@ -297,7 +327,7 @@ root = Tk()
 root.geometry("290x120") 
 root.resizable(0, 0)
 center(root)
-root.title("Graph Converter")
+root.title("Graph Converter v1.0.0")
 
 tlabel = Label(root, text ="Input Graph:")
 tlabel.grid(row=0, column=0, padx = 10, pady = (10,0), sticky=W)
