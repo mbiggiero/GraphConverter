@@ -1,4 +1,4 @@
-# GraphConverter
+# Graph Converter
 A program for converting graphs between different formats.
 
 ![screenshot](https://github.com/mbiggiero/GraphConverter/blob/main/screenshot.png?raw=true)
